@@ -1,11 +1,13 @@
 <?php
 
-class BlogpostController extends \BaseController {
+class BlogpostController extends BaseController {
+
 
 	public function __construct()
 	{
-		$this->beforeFilter('iziAuth|iziAdmin', ['on' => ['post', 'put', 'path', 'delete']]);
+    $this->beforeFilter('iziAuth|iziAdmin', ['on' => ['post', 'put', 'path', 'delete', 'patch']]);
 	}
+
 	
 	/**
 	 * Display a listing of the resource.
@@ -14,7 +16,12 @@ class BlogpostController extends \BaseController {
 	 */
 	public function index()
 	{
-		//
+		$posts = Blogpost::all();
+
+		if( !!$posts ){
+			return Response::json(['result' => true, 'data' => $posts->toArray()], 200);
+		}
+		return Response::json(['result' => false, 'data' => ['Resource not found']], 404);
 	}
 
 
@@ -25,7 +32,7 @@ class BlogpostController extends \BaseController {
 	 */
 	public function create()
 	{
-		//
+		return Response::json(['result' => false, 'data' => ['Not found']], 404);
 	}
 
 
@@ -36,7 +43,12 @@ class BlogpostController extends \BaseController {
 	 */
 	public function store()
 	{
-		//
+		$post = Blogpost::create(Input::all());
+
+		if( !!$post ){
+			return Response::json(['result' => true, 'data' => $post->toArray()], 200);
+		}
+		return Response::json(['result' => false, 'data' => ['Resource not created']], 400);
 	}
 
 
@@ -48,9 +60,12 @@ class BlogpostController extends \BaseController {
 	 */
 	public function show($id)
 	{
-		$page = Page::find($id);
-  	$page = Page::find($id);
-  return $page->blogposts();return $page->blogposts();
+		$post = Blogpost::with(['images', 'texts'])->where('id', $id)->get();
+
+		if( !!$post ){
+			return Response::json(['result' => true, 'data' => $post->toArray()], 200);
+		}
+		return Response::json(['result' => false, 'data' => ['Resource not found']], 404);
 	}
 
 
@@ -62,9 +77,8 @@ class BlogpostController extends \BaseController {
 	 */
 	public function edit($id)
 	{
-		//
+		return Response::json(['result' => false, 'data' => ['Not found']], 404);
 	}
-
 
 	/**
 	 * Update the specified resource in storage.
@@ -74,7 +88,19 @@ class BlogpostController extends \BaseController {
 	 */
 	public function update($id)
 	{
-		//
+		$post = Blogpost::find($id);
+
+		if( !!$post ){
+			$post = $post->update(Input::all());
+
+			$texts = Input::get('texts');
+	    foreach($texts as $text){
+	      $txt = Text::find($text['id'])->update($text);
+	    }
+
+			return Response::json(['result' => true, 'data' => $post->toArray()], 200);
+		}
+		return Response::json(['result' => false, 'data' =>  ['Resource not found']], 404);
 	}
 
 
@@ -86,7 +112,13 @@ class BlogpostController extends \BaseController {
 	 */
 	public function destroy($id)
 	{
-		//
+		$post = Blogpost::find($id);
+
+		if( !!$post ){
+			$post = $post->delete();
+			return Response::json(['result' => true, 'data' => $post->toArray()], 200);
+		}
+		return Response::json(['result' => false, 'data' => ['Resource not found']], 404);
 	}
 
 

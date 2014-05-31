@@ -1,11 +1,13 @@
 <?php
 
-class MarkerController extends \BaseController {
+class MarkerController extends BaseController {
+
 
 	public function __construct()
 	{
-		$this->beforeFilter('iziAuth|iziAdmin', ['on' => ['post', 'put', 'path', 'delete']]);
+    $this->beforeFilter('iziAuth|iziAdmin', ['on' => ['post', 'put', 'path', 'delete', 'patch']]);
 	}
+
 	
 	/**
 	 * Display a listing of the resource.
@@ -14,7 +16,11 @@ class MarkerController extends \BaseController {
 	 */
 	public function index()
 	{
-		//
+		$markers = Marker::all();
+		if( !!$markers ){
+			return Response::json(['result' => true, 'data' => $markers->toArray()], 200);
+		}
+		return Response::json(['result' => false, 'data' => ['Resource not found']], 404);
 	}
 
 
@@ -25,21 +31,73 @@ class MarkerController extends \BaseController {
 	 */
 	public function create()
 	{
-		//
+		return Response::json(['result' => false, 'data' => ['Not found']], 404);
 	}
 
-
+  
 	/**
 	 * Store a newly created resource in storage.
 	 *
 	 * @return Response
 	 */
 	public function store()
-	{
-		$page = Page::find(Input::get('id'));
-    $marker = Marker::create(Input::all());
-    $page->markers()->save($marker);
-    return $marker;
+	{	
+		if( Input::has('id') && Input::get('id') != 'undefined' ){
+      $containerId = Input::get('id');
+      $containerType = Input::get('type');
+      $container = $containerType::find($containerId);
+    }
+
+		if( Input::hasFile('file') ){
+			$path = public_path() . '/uploads/';
+
+	    $file = Input::file('file');
+	    
+	    $originalName = $file->getClientOriginalName();
+
+	    $date = new DateTime();
+	    $name = $date->getTimestamp();
+	    $ext = $file->getClientOriginalExtension();
+
+	    $filename = $name . '.' . $ext;
+
+	    $file->move($path, $filename);
+
+	    $csv = new League\Csv\Reader($path . $filename);
+	    $csv->setDelimiter(';');
+	    $csv->setEncoding("iso-8859-15");
+
+	    foreach( $csv as $row ){
+	      $data = [
+	        'title' => $row[0],
+	        'street' => $row[1],
+	        'zip' => $row[2],
+	        'city' => $row[3],
+	        'country' => 'Sweden',
+	      ];
+
+	      try {
+	          $geocode = Geocoder::geocode($data['street'] . ' ' . $data['zip'] . ' ' . $data['city']);
+	          $data['latitude'] = $geocode['latitude'];
+	          $data['longitude'] = $geocode['longitude'];
+	      } catch (\Exception $e) {
+	      }
+
+	      $marker = Marker::create($data);
+
+	      if( !!$container )
+	      	$container->markers()->save($marker);
+	    }
+		}else{
+			$marker = Marker::create(Input::all());
+
+			if( !!$container )
+				$container->markers()->save($marker);
+		}
+
+		
+
+    return Response::json(['result' => true, 'data' => $marker->toArray()], 200);
 	}
 
 
@@ -51,9 +109,13 @@ class MarkerController extends \BaseController {
 	 */
 	public function show($id)
 	{
-		$page = Page::with('markers')->find($id);
-	  //$markers = $page->markers();
-	  return $page;
+		//$page = Page::with('markers')->find($id);
+	  $marker = Marker::find($id);
+
+	  if( !!$marker ){
+	  	return Response::json(['result' => true, 'data' => $marker->toArray()], 200);
+	  }
+	  return Response::json(['result' => false, 'data' => ['Resource not found']], 404);
 	}
 
 
@@ -65,7 +127,7 @@ class MarkerController extends \BaseController {
 	 */
 	public function edit($id)
 	{
-		//
+		return Response::json(['result' => false, 'data' => ['Not found']], 404);
 	}
 
 
@@ -78,8 +140,11 @@ class MarkerController extends \BaseController {
 	public function update($id)
 	{
 		$marker = Marker::find($id);
-    $marker->update(Input::all());
-    return $marker;
+		if( !!$marker ){
+			$marker->update(Input::all());
+			return Response::json(['result' => true, 'data' => $marker->toArray()], 200);	
+		}
+    return Response::json(['result' => false, 'data' => ['Resource not found']], 404);
 	}
 
 
@@ -91,8 +156,12 @@ class MarkerController extends \BaseController {
 	 */
 	public function destroy($id)
 	{
-		$marker = Marker::find($id)->delete();
-		return $marker;
+		$marker = Marker::find($id);
+		if( !!$marker ){
+			$marker->delete();
+			return Response::json(['result' => true, 'data' => $marker->toArray()], 200);
+		}
+		return Response::json(['result' => false, 'data' => ['Resource not found']], 404);
 	}
 
 

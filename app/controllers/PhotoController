@@ -1,0 +1,197 @@
+<?php
+
+class PhotoController extends BaseController {
+
+
+  public function __construct()
+  {
+    $this->beforeFilter('iziAuth|iziAdmin', ['on' => ['post', 'put', 'path', 'delete', 'patch']]);
+  }
+  
+
+  /**
+   * Display a listing of the resource.
+   *
+   * @return Response
+   */
+  public function index()
+  {
+    $photos = Photo::all();
+    if( !!$photos ){
+      return Response::json(['result' => true, 'data' => $photos->toArray()], 200);
+    }
+  }
+
+
+  /**
+   * Show the form for creating a new resource.
+   *
+   * @return Response
+   */
+  public function create()
+  {
+    return Response::json(['result' => false, 'data' => ['Not found']], 404);
+  }
+
+
+  /**
+   * Store a newly created resource in storage.
+   *
+   * @return Response
+   */
+  public function store()
+  {
+    $path = public_path();
+
+    $photo = null;
+
+    if( Input::has('updatefile') ){
+
+      $photo = Photo::find(Input::get('updatefile'));
+
+      $file = Input::file('file');
+
+      $originalName = $file->getClientOriginalName();
+
+      $date = new DateTime();
+      $name = $date->getTimestamp();
+      $ext = $file->getClientOriginalExtension();
+
+      $filename = $name . '.' . $ext;
+
+      $image = Image::make(Input::file('file')->getRealPath());
+
+      File::exists($path.'/uploads/') or File::makeDirectory($path.'/uploads/');
+
+      $image->save($path.'/uploads/'.$name.'.'.$ext);
+
+      $image->resize(null, 200, true)->crop(100, 100);
+
+
+      $image->save($path.'/uploads/'.$name.'_thumb.'.$ext);
+
+      $thumbnail = $name.'_thumb.'.$ext;
+
+      $data = array(
+        'originalname' => $originalName,
+        'name' => $name,
+        'ext' => $ext,
+        'filename' => asset('uploads/'.$filename),
+        'thumbnail' => asset('uploads/'.$thumbnail)
+      );
+
+      $photo->update($data);
+
+    }else{
+
+      if( count(Input::file('file')) > 0 ){
+        $file = Input::file('file');
+
+        $originalName = $file->getClientOriginalName();
+
+        $date = new DateTime();
+        $name = $date->getTimestamp();
+        $ext = $file->getClientOriginalExtension();
+
+        $filename = $name . '.' . $ext;
+        
+        try{
+          $image = Image::make(Input::file('file')->getRealPath());
+
+          File::exists($path.'/uploads/') or File::makeDirectory($path.'/uploads/');
+
+          $image->save($path.'/uploads/'.$name.'.'.$ext);
+
+          $image->resize(null, 200, true)->crop(100, 100);
+
+          $image->save($path.'/uploads/'.$name.'_thumb.'.$ext);
+
+          $thumbnail = $name.'_thumb.'.$ext;
+
+          $data = array(
+            'originalname' => $originalName,
+            'name' => $name,
+            'ext' => $ext,
+            'filename' => asset('uploads/'.$filename),
+            'thumbnail' => asset('uploads/'.$thumbnail)
+          );
+        }catch(Intervention\Image\Exception\InvalidImageTypeException $e){
+          return Response::json(['result' => false, 'data' => ['Wrong file type']], 400);
+        }
+      } else {
+        $data = Input::all();
+      }
+
+      $photo = Photo::create($data);
+
+      if( Input::has('id') && Input::get('id') != 'undefined' ){
+        $containerId = Input::get('id');
+        $containerType = Input::get('type');
+        $container = $containerType::find($containerId);
+        $container->images()->save($photo);
+      }
+    }
+
+    return Response::json(['result' => true, 'data' => $photo->toArray()], 200);
+  }
+
+
+  /**
+   * Display the specified resource.
+   *
+   * @param  int  $id
+   * @return Response
+   */
+  public function show($id)
+  {
+    $photo = Photo::find($id);
+
+    if( !!$photo ){
+      return Response::json(['result' => true, 'data' => $photo->toArray()], 200);
+    }
+    return Response::json(['result' => false, 'data' => ['Resource not found']], 404);
+  }
+
+
+  /**
+   * Show the form for editing the specified resource.
+   *
+   * @param  int  $id
+   * @return Response
+   */
+  public function edit($id)
+  {
+    return Response::json(['result' => false, 'data' => ['Not found']], 404);
+  }
+
+  /**
+   * Update the specified resource in storage.
+   *
+   * @param  int  $id
+   * @return Response
+   */
+  public function update($id)
+  {
+    return Response::json(['result' => false, 'data' => ['PUT does not work']], 400);
+  }
+
+
+  /**
+   * Remove the specified resource from storage.
+   *
+   * @param  int  $id
+   * @return Response
+   */
+  public function destroy($id)
+  {
+    $photo = Photo::find($id);
+
+    if( !!$photo ){
+      $photo = $photo->delete();
+      return Response::json(['result' => true, 'data' => $photo->toArray()], 200);
+    }
+    return Response::json(['result' => false, 'data' => ['Resounce not found']], 404);
+  }
+
+
+}

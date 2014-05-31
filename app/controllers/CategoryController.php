@@ -1,11 +1,13 @@
 <?php
 
-class CategoryController extends \BaseController {
+class CategoryController extends BaseController {
+
 
 	public function __construct()
 	{
-		$this->beforeFilter('iziAuth|iziAdmin', ['on' => ['post', 'put', 'path', 'delete']]);
+    $this->beforeFilter('iziAuth|iziAdmin', ['on' => ['post', 'put', 'path', 'delete', 'patch']]);
 	}
+	
 	
 	/**
 	 * Display a listing of the resource.
@@ -14,7 +16,10 @@ class CategoryController extends \BaseController {
 	 */
 	public function index()
 	{
-		return Category::all();
+		$categories = Category::all();
+		if( !!$categories ){
+			return Response::json(['result' => true, 'data' => $categories->toArray()], 200);
+		}
 	}
 
 
@@ -25,7 +30,7 @@ class CategoryController extends \BaseController {
 	 */
 	public function create()
 	{
-		//
+		return Response::json(['result' => false, 'data' => ['Not found']], 404);
 	}
 
 
@@ -37,7 +42,11 @@ class CategoryController extends \BaseController {
 	public function store()
 	{
 		$category = Category::create(Input::all());
-    return $category;
+
+		if( !!$category ){
+			return Response::json(['result' => true, 'data' => $category->toArray()], 200);
+		}
+    return Response::json(['result' => false, 'data' => ['Resource not created']], 400);
 	}
 
 
@@ -49,7 +58,12 @@ class CategoryController extends \BaseController {
 	 */
 	public function show($id)
 	{
-		//
+		$category = Category::find($id);
+
+		if( !!$category ){
+			return Response::json(['result' => true, 'data' => $category->toArray()], 200);
+		}
+		return Response::json(['result' => false, 'data' => ['Resource not found']], 404);
 	}
 
 
@@ -61,7 +75,7 @@ class CategoryController extends \BaseController {
 	 */
 	public function edit($id)
 	{
-		//
+		return Response::json(['result' => false, 'data' => ['Not found']], 404);
 	}
 
 
@@ -73,7 +87,13 @@ class CategoryController extends \BaseController {
 	 */
 	public function update($id)
 	{
-		//
+		$category = Category::find($id);
+
+		if( !!$category ){
+			$category->update(Input::all());
+			return Response::json(['result' => true, 'data' => $category->toArray()], 200);
+		}
+		return Response::json(['result' => false, 'data' => ['Resource not found']], 404);
 	}
 
 
@@ -85,7 +105,13 @@ class CategoryController extends \BaseController {
 	 */
 	public function destroy($id)
 	{
-		//
+		$category = Category::find($id);
+
+		if( !!$category ){
+			$category = $category->delete();
+			return Response::json(['result' => true, 'data' => $category->toArray()], 200);
+		}
+		return Response::json(['result' => false, 'data' => ['Resounce not found']], 404);
 	}
 
 

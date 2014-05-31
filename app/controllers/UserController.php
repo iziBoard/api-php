@@ -1,6 +1,6 @@
 <?php
 
-class UserController extends \BaseController {
+class UserController extends BaseController {
 
 	/**
 	 * Display a listing of the resource.
@@ -21,7 +21,7 @@ class UserController extends \BaseController {
 	 */
 	public function create()
 	{
-		//
+		return Response::json(['result' => false, 'data' => ['Not found']], 404);
 	}
 
 
@@ -38,7 +38,7 @@ class UserController extends \BaseController {
 		{
 		    // Create the user
 		    $user = Sentry::createUser(array(
-		    		'first_name=' => Input::get('first_name'),
+		    		'first_name' => Input::get('first_name'),
 		    		'last_name' => Input::get('last_name'),
 		        'email'     => Input::get('email'),
 		        'password'  => Input::get('password'),
@@ -67,11 +67,11 @@ class UserController extends \BaseController {
 		}
 		catch (Cartalyst\Sentry\Groups\GroupNotFoundException $e)
 		{
-		    $data[] = 'Group was not found.';
+		    return Response::json(['result' => false, 'data'  => ['Group was not found.']], 404);
 		}
 
 
-    return Response::json(['result' => false, 'data' => $data], 400);
+    return Response::json(['result' => false, 'data' => $data->toArray()], 400);
 	}
 
 
@@ -84,7 +84,11 @@ class UserController extends \BaseController {
 	public function show($id)
 	{
 		$user = User::find($id);
-		return Response::json(['result' => true, 'data' => $user], 200);
+
+		if( !!$user ){
+			return Response::json(['result' => true, 'data' => $user->toArray()], 200);	
+		}
+		return Response::json(['result' => false, 'data' => ['Resource not found']], 404);
 	}
 
 
@@ -96,7 +100,7 @@ class UserController extends \BaseController {
 	 */
 	public function edit($id)
 	{
-		//
+		return Response::json(['result' => false, 'data' => ['Not found']], 404);
 	}
 
 
@@ -108,7 +112,45 @@ class UserController extends \BaseController {
 	 */
 	public function update($id)
 	{
-		//
+		$messages = [];
+		
+		try
+		{
+	    $user = Sentry::findUserById($id);
+
+	    if( Input::has('email') ){
+	    	$user->email = Input::get('email');
+	    }
+
+	    if( Input::has('first_name') ){
+	    	$user->first_name = Input::get('first_name');
+	    }
+
+	    if( Input::has('last_name') ){
+	    	$user->last_name = Input::get('last_name');
+	    }
+
+	    if( Input::has('password') ){
+	    	$user->password = Input::get('passwoed');
+	    }
+
+	    // Update the user
+	    if ( $user->save() ){
+	   		return Response::json(['result' => true, 'data' => $user->toArray()], 200);
+	    } else {
+	    	return Response::json(['result' => false, 'data' => ['User was not updated']], 401);
+	    }
+		}
+		catch (Cartalyst\Sentry\Users\UserExistsException $e)
+		{
+	    $messages[] = 'User with this login already exists.';
+		}
+		catch (Cartalyst\Sentry\Users\UserNotFoundException $e)
+		{
+	    return Response::json(['result' => false, 'data' => ['User was not found.']], 404);
+		}
+
+		return Response::json(['result' => false, 'data' => $messages], 400);
 	}
 
 
@@ -120,7 +162,22 @@ class UserController extends \BaseController {
 	 */
 	public function destroy($id)
 	{
-		//
+		try
+		{
+	    // Find the user using the user id
+	    $user = Sentry::findUserById($id);
+
+	    // Delete the user
+	    $user->delete();
+
+			return Response::json(['result' => true, 'data' => $user->toArray()], 200);
+		}
+		catch (Cartalyst\Sentry\Users\UserNotFoundException $e)
+		{
+	    $messages[] = 'User was not found.';
+		}
+
+		return Response::json(['result' => false, 'data' => $messages], 400);
 	}
 
 

@@ -2,10 +2,12 @@
 
 class TextController extends BaseController {
 
+
 	public function __construct()
 	{
-		$this->beforeFilter('iziAuth|iziAdmin', ['on' => ['post', 'put', 'path', 'delete']]);
+    $this->beforeFilter('iziAuth|iziAdmin', ['on' => ['post', 'put', 'path', 'delete', 'patch']]);
 	}
+
 
 	/**
 	 * Display a listing of the resource.
@@ -13,8 +15,10 @@ class TextController extends BaseController {
 	 * @return Response
 	 */
 	public function index()
-	{
-		//
+	{	
+		$texts = Text::all();
+
+		return Response::json(['result' => true, 'data' => $texts->toArray()], 200);
 	}
 
 
@@ -25,16 +29,7 @@ class TextController extends BaseController {
 	 */
 	public function create()
 	{
-		$text = Text::create(Input::only('description'));
-
-    if( Input::has('id') && Input::get('id') != 'undefined' ){
-      $containerId = Input::get('id');
-      $containerType = Input::get('type');
-      $container = $containerType::find($containerId);
-      $container->texts()->save($text);
-    }
-
-    return $text;
+		return Response::json(['result' => false, 'data' => ['Not found']], 404);
 	}
 
 
@@ -45,7 +40,16 @@ class TextController extends BaseController {
 	 */
 	public function store()
 	{
-		//
+		$text = Text::create(Input::only('description'));
+
+    if( Input::has('id') && Input::get('id') != 'undefined' ){
+      $containerId = Input::get('id');
+      $containerType = Input::get('type');
+      $container = $containerType::find($containerId);
+      $container->texts()->save($text);
+    }
+
+    return Response::json(['result' => true, 'data' => $text->toArray()], 200);
 	}
 
 
@@ -57,7 +61,11 @@ class TextController extends BaseController {
 	 */
 	public function show($id)
 	{
-		//
+		$text = Text::find($id);
+		if( !!$text ){
+			return Response::json(['result' => true, 'data' => $text->toArray()], 200);
+		}
+		return Response::json(['result' => false, 'data' => ['Resource not found']], 404);
 	}
 
 
@@ -69,7 +77,7 @@ class TextController extends BaseController {
 	 */
 	public function edit($id)
 	{
-		//
+		return Response::json(['result' => false, 'data' => ['Not found']], 404);
 	}
 
 
@@ -82,8 +90,13 @@ class TextController extends BaseController {
 	public function update($id)
 	{
 		$text = Text::find(Input::get('id'));
-    $text->update(Input::all());
-    return $text;
+
+		if( !!$text ){
+			$text->update(Input::all());
+			return Response::json(['result' => true, 'data' => $text->toArray()], 200);
+		}
+    
+    return Response::json(['result' => false, 'data' => ['Resource not found']], 404);
 	}
 
 
@@ -96,8 +109,13 @@ class TextController extends BaseController {
 	public function destroy($id)
 	{
 		$text = Text::find($id);
-    $text->delete();
-    return $text;
+
+		if( !!$text ){
+			$text->delete();
+			return Response::json(['result' => true, 'data' => $text->toArray()], 200);	
+		}
+    
+    return Response::json(['result' => false, 'data' => ['Resource not found']], 404);
 	}
 
 

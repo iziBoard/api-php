@@ -1,11 +1,13 @@
 <?php
 
-class PageController extends \BaseController {
+class PageController extends BaseController {
+
 
 	public function __construct()
 	{
-		$this->beforeFilter('iziAuth|iziAdmin', ['on' => ['post', 'put', 'path', 'delete']]);
+    $this->beforeFilter('iziAuth|iziAdmin', ['on' => ['post', 'put', 'path', 'delete', 'patch']]);
 	}
+
 	
 	/**
 	 * Display a listing of the resource.
@@ -14,7 +16,13 @@ class PageController extends \BaseController {
 	 */
 	public function index()
 	{
-		return Page::with(array('texts', 'images', 'markers', 'blogposts', 'blogposts.images', 'blogposts.texts', 'accordions'))->get();
+		$page = Page::with(['texts', 'images', 'markers', 'questions'])->get();
+
+		if( !!$page ){
+			return Response::json(['result' => true, 'data' => $page->toArray()], 200);
+		}
+
+		return Response::json(['result' => false, 'data' => ['Resource not found']], 404);
 	}
 
 
@@ -25,7 +33,7 @@ class PageController extends \BaseController {
 	 */
 	public function create()
 	{
-		//
+		return Response::json(['result' => false, 'data' => ['Not found']], 404);
 	}
 
 
@@ -37,7 +45,13 @@ class PageController extends \BaseController {
 	public function store()
 	{
     $page = Page::create(Input::all());
-    return Page::with(array('texts', 'images', 'markers'))->where('id', $page->id)->first();
+
+    if( !!$page ){
+    	$page = Page::with(['texts', 'images', 'markers', 'questions'])->where('id', $page->id)->get();
+    	return Response::json(['result' => true, 'data' => $page->toArray()], 200);
+    }
+    
+    return Response::json(['result' => false, 'data' => ['Resource not created']], 400);
 	}
 
 
@@ -49,7 +63,11 @@ class PageController extends \BaseController {
 	 */
 	public function show($id)
 	{
-		//
+		$page = Page::with(['texts', 'images', 'markers', 'questions'])->where('id', $id)->get();
+
+		if( !!$page ){
+			return Response::json(['result' => true, 'data' => $page->toArray()], 200);
+		}
 	}
 
 
@@ -61,7 +79,7 @@ class PageController extends \BaseController {
 	 */
 	public function edit($id)
 	{
-		//
+		return Response::json(['result' => false, 'data' => ['Not found']], 404);
 	}
 
 
@@ -73,12 +91,15 @@ class PageController extends \BaseController {
 	 */
 	public function update($id)
 	{
-    $page = Page::find(Input::get('id'))->update(Input::only('title', 'body'));
+    $page = Page::find(Input::get('id'));
+    $page->update(Input::only('title', 'heading', 'permissions', 'type'));
+    
     $texts = Input::get('texts');
-
     foreach($texts as $text){
       $txt = Text::find($text['id'])->update($text);
     }
+
+    return Response::json(['result' => true, 'data' => $page->toArray()], 200);
 	}
 
 
@@ -92,8 +113,7 @@ class PageController extends \BaseController {
 	{
     $page = Page::find($id);
     $page->delete();
-    return $page;
+    return Response::json(['result' => true, 'data' => $page->toArray()], 200);
 	}
-
 
 }

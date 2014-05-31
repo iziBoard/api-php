@@ -27,8 +27,8 @@ return array(
     'paths' => array(
         '^/' => array(
             'allow_origin' => array('*'),
-            'allow_headers' => array('Content-Type', 'Accept', 'Origin', 'X-Requested-With', 'Last-Modified', 'Auth-Token'),
-            'allow_methods' => array('POST', 'PUT', 'GET', 'DELETE'),
+            'allow_headers' => array('Content-Type', 'Accept', 'Origin', 'X-Requested-With', 'Last-Modified', 'X-Auth-Token'),
+            'allow_methods' => array('POST', 'PUT', 'GET', 'DELETE', 'PATCH'),
             'max_age' => 3600,
         ),
     ),
