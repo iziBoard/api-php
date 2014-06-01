@@ -9,8 +9,16 @@ class UserController extends BaseController {
 	 */
 	public function index()
 	{
-		$users = User::all();
-		return Response::json(['result' => true, 'data' => $users->toArray()], 200);
+		$users = Sentry::findAllUsers();
+
+		$data = [];
+		foreach( $users as $user ){
+			$usr = $user->toArray();
+			$usr['permissions'] = $user->getMergedPermissions();
+			$data[] = $usr;
+		}
+
+		return Response::json(['result' => true, 'data' => $data], 200);
 	}
 
 
@@ -51,7 +59,10 @@ class UserController extends BaseController {
 		    // Assign the group to the user
 		    $user->addGroup($userGroup);
 
-		    return Response::json(['result' => true, 'data' => $user], 200);
+		    $data = $user->toArray();
+		    $data['permissions'] = $user->getMergedPermissions();
+
+		    return Response::json(['result' => true, 'data' => $data], 200);
 		}
 		catch (Cartalyst\Sentry\Users\LoginRequiredException $e)
 		{
