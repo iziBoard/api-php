@@ -33,15 +33,15 @@ App::after(function($request, $response)
 |
 */
 
-Route::filter('auth', function()
-{
+Route::filter('iziAuth', function($route, $request){
+
   $payload = $request->header('X-Auth-Token');
 
   $userModel = Sentry::getUserProvider()->createModel();
 
-  $user = $userModel->where('api_token', $payload)->first();
+  $user = $userModel->where('persist_code', $payload)->first();
 
-  if(!$user) {
+  if(!$user || $payload == null) {
     
     $response = Response::json([
       'error' => true,
@@ -54,6 +54,45 @@ Route::filter('auth', function()
     
     return $response;
   }
+
+});
+
+Route::filter('iziAdmin', function($route, $request){
+
+  $payload = $request->header('X-Auth-Token');
+
+  $userModel = Sentry::getUserProvider()->createModel();
+
+  $user = $userModel->where('persist_code', $payload)->first();
+
+  if(!$user || $payload == null) {
+    
+    $response = Response::json([
+      'error' => true,
+      'message' => 'Not authenticated',
+      'code' => 401
+      ], 401
+    );
+
+    $response->header('Content-Type', 'application/json');
+    
+    return $response;
+  }
+
+  if( !$user->hasAccess('admin') ) {
+    
+    $response = Response::json([
+      'error' => true,
+      'message' => 'Not authorized',
+      'code' => 401
+      ], 401
+    );
+
+    $response->header('Content-Type', 'application/json');
+    
+    return $response;
+  }
+
 });
 
 
