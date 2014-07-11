@@ -2,6 +2,11 @@
 
 class UserController extends BaseController {
 
+	public function __construct()
+  {	
+    $this->beforeFilter('iziAuth', ['on' => ['post', 'put', 'path', 'delete', 'patch']]);
+  }
+  
 	/**
 	 * Display a listing of the resource.
 	 *

@@ -5,7 +5,7 @@ class TextController extends BaseController {
 
 	public function __construct()
 	{
-    $this->beforeFilter('iziAuth|iziAdmin', ['on' => ['post', 'put', 'path', 'delete', 'patch']]);
+    $this->beforeFilter('iziAdmin', ['on' => ['post', 'put', 'path', 'delete', 'patch']]);
 	}
 
 
